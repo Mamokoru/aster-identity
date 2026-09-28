@@ -3,7 +3,7 @@ $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $environmentFile = Join-Path $projectRoot ".env.local"
 $roleMigrationFile = Join-Path $projectRoot "db\migrations\000_create_app_role.sql"
-$migrationFile = Join-Path $projectRoot "db\migrations\001_initial_schema.sql"
+$migrationsDirectory = Join-Path $projectRoot "db\migrations"
 
 if (-not (Test-Path $environmentFile)) {
   throw "Missing .env.local. Copy .env.example to .env.local and set local database credentials."
@@ -68,10 +68,16 @@ try {
     throw "PostgreSQL app-role setup failed with exit code $LASTEXITCODE."
   }
 
-  & $psqlPath @arguments -f $migrationFile
+  $migrationFiles = Get-ChildItem $migrationsDirectory -Filter "*.sql" |
+    Where-Object { $_.Name -ne "000_create_app_role.sql" } |
+    Sort-Object Name
 
-  if ($LASTEXITCODE -ne 0) {
-    throw "PostgreSQL schema migration failed with exit code $LASTEXITCODE."
+  foreach ($migrationFile in $migrationFiles) {
+    & $psqlPath @arguments -f $migrationFile.FullName
+
+    if ($LASTEXITCODE -ne 0) {
+      throw "PostgreSQL migration $($migrationFile.Name) failed with exit code $LASTEXITCODE."
+    }
   }
 } finally {
   Remove-Item Env:PGPASSWORD -ErrorAction SilentlyContinue

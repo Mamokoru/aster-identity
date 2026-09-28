@@ -1,22 +1,44 @@
 "use client";
 
-import { useState, type SubmitEvent } from "react";
-
-type SignInMethod = "password" | "passkey";
+import { signIn, signOut, getSession } from "next-auth/react";
+import { useEffect, useState, type SubmitEvent } from "react";
 
 export default function Home() {
-  const [method, setMethod] = useState<SignInMethod>("password");
-  const [showPassword, setShowPassword] = useState(false);
+  const [user, setUser] = useState<{ name?: string | null; email?: string | null } | null>(null);
   const [notice, setNotice] = useState("");
+  const [isSigningIn, setIsSigningIn] = useState(false);
 
-  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
+  useEffect(() => {
+    let isMounted = true;
+
+    void getSession().then((session) => {
+      if (isMounted) {
+        setUser(session?.user ?? null);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    setNotice("Authentication is not active yet. Connect Keycloak before signing in.");
-  }
+    setIsSigningIn(true);
+    setNotice("Connecting to secure sign-in...");
 
-  function chooseMethod(nextMethod: SignInMethod) {
-    setMethod(nextMethod);
-    setNotice("");
+    const formData = new FormData(event.currentTarget);
+    const email = String(formData.get("email") ?? "").trim();
+
+    try {
+      await signIn("keycloak", {
+        callbackUrl: "/",
+        ...(email ? { login_hint: email } : {}),
+      });
+    } catch {
+      setIsSigningIn(false);
+      setNotice("Could not connect to Keycloak. Check that the identity service is running.");
+    }
   }
 
   return (
@@ -70,95 +92,50 @@ export default function Home() {
             <p className="form-subtitle">Use your work account to continue.</p>
           </div>
 
-          <div className="method-switch" role="group" aria-label="Sign-in method">
-            <button
-              className={method === "password" ? "method-tab is-active" : "method-tab"}
-              type="button"
-              aria-pressed={method === "password"}
-              onClick={() => chooseMethod("password")}
-            >
-              Password
-            </button>
-            <button
-              className={method === "passkey" ? "method-tab is-active" : "method-tab"}
-              type="button"
-              aria-pressed={method === "passkey"}
-              onClick={() => chooseMethod("passkey")}
-            >
-              <span className="key-icon" aria-hidden="true" /> Passkey
-            </button>
-          </div>
-
           <form className="signin-form" onSubmit={handleSubmit}>
-            <div className="field-group">
-              <label htmlFor="email">Work email</label>
-              <input
-                autoComplete="username webauthn"
-                id="email"
-                name="email"
-                placeholder="name@company.com"
-                type="email"
-                required
-              />
-            </div>
-
-            {method === "password" && (
+            {!user && (
               <div className="field-group">
-                <div className="label-row">
-                  <label htmlFor="password">Password</label>
-                  <button
-                    className="text-button"
-                    type="button"
-                    onClick={() => setNotice("Password recovery will be available through Keycloak.")}
-                  >
-                    Forgot password?
-                  </button>
-                </div>
-                <div className="password-wrap">
-                  <input
-                    autoComplete="current-password"
-                    id="password"
-                    name="password"
-                    placeholder="Enter your password"
-                    type={showPassword ? "text" : "password"}
-                    required
-                  />
-                  <button
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                    aria-pressed={showPassword}
-                    className="visibility-button"
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    <span className="eye-icon" aria-hidden="true" />
-                  </button>
-                </div>
+                <label htmlFor="email">Work email <span className="optional-label">(optional)</span></label>
+                <input
+                  autoComplete="username"
+                  id="email"
+                  name="email"
+                  placeholder="name@company.com"
+                  type="email"
+                />
               </div>
             )}
 
-            {method === "passkey" && (
-              <div className="passkey-note">
-                <span className="passkey-symbol" aria-hidden="true"><span /></span>
+            {user ? (
+              <div className="signed-in-state" role="status">
+                <span className="signed-in-mark" aria-hidden="true">✓</span>
                 <div>
-                  <strong>Sign in with a passkey</strong>
-                  <p>Use your device&apos;s screen lock or a security key.</p>
+                  <strong>You&apos;re signed in</strong>
+                  <p>{user.name || user.email}</p>
                 </div>
               </div>
+            ) : (
+              <button className="submit-button" type="submit" disabled={isSigningIn}>
+                <span>{isSigningIn ? "Redirecting..." : "Continue to secure sign-in"}</span>
+                <span className="button-arrow" aria-hidden="true">&#8594;</span>
+              </button>
             )}
 
             {notice && <p className="form-notice" role="status">{notice}</p>}
 
-            <button className="submit-button" type="submit">
-              <span>{method === "password" ? "Continue" : "Continue with passkey"}</span>
-              <span className="button-arrow" aria-hidden="true">&#8594;</span>
-            </button>
+            {user && (
+              <button className="submit-button" type="button" onClick={() => void signOut({ callbackUrl: "/" })}>
+                <span>Sign out</span>
+                <span className="button-arrow" aria-hidden="true">&#8594;</span>
+              </button>
+            )}
           </form>
 
           <div className="form-divider"><span /> <span>SECURE WORKSPACE ACCESS</span> <span /></div>
 
           <p className="security-note">
             <span className="status-dot" aria-hidden="true" />
-            Keycloak connection pending. No credentials are sent.
+            Passwords and passkeys are handled by Keycloak.
           </p>
         </div>
 
