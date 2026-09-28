@@ -2,6 +2,43 @@
 
 Next.js App Router authentication starter using Keycloak OIDC and PostgreSQL for application identity mappings, authorization roles, and audit events. Keycloak remains responsible for passwords, passkeys, MFA, and identity-provider sessions.
 
+## Goal
+
+Provide a reusable, security-focused authentication starter that is straightforward to configure locally and has clear production-hardening guidance. OIDC delegates identity verification to an identity provider; PostgreSQL stores only application identity mappings, roles, and app-side audit events. The app must not collect or store users' passwords.
+
+This is a technical security baseline, not a claim of legal compliance or certification. Applicable legal obligations depend on deployment location, organization, and the data being processed.
+
+## Initial Compliance Targets
+
+These are the security/compliance controls this project is initially designed to pursue. Status describes the current implementation, not a certification.
+
+- **Identity verification:** OAuth 2.0 / OIDC through Keycloak is wired. MFA and passwordless passkeys using WebAuthn must be enabled and verified in the realm.
+- **Data in transit:** HTTPS/TLS is required for production app and identity-provider endpoints. Local development uses HTTP; production deployment is not configured yet.
+- **Least privilege:** OIDC is used for sign-in, and PostgreSQL has a restricted runtime role. The server-side app-role check exists but is not yet connected to protected application routes.
+- **Account defense:** Keycloak brute-force detection and temporary lockout need to be configured and verified. CAPTCHA is not currently implemented.
+- **Audit trails:** Successful app sign-ins, local sign-outs, and authorization decisions can be recorded in PostgreSQL. Failed login events still need to be forwarded from Keycloak. The database trigger prevents mutation through the app role, but administrator-proof immutability requires an external WORM archive.
+
+## Current Progress
+
+Implemented:
+
+- Auth.js v4 Keycloak provider and App Router callback route, using the `aster` realm configuration from environment variables.
+- Password/passkey handling delegated to Keycloak; the app sign-in action redirects to the provider.
+- PostgreSQL pool with TLS verification by default in production, Keycloak subject-to-app-user mapping, and successful sign-in/local sign-out audit writes.
+- Server-only role-check helper that denies by default and records authorization allow/deny events.
+- PostgreSQL schema, append-only-for-the-app audit trigger, migration runner, and least-privilege runtime grants.
+- Lint and production build pass. The OIDC redirect and database audit write permissions have been checked locally.
+
+Still to do or verify:
+
+- Complete a real Keycloak user sign-in and callback test; the full authentication round trip has not yet been verified with a test user.
+- Configure and verify realm MFA/passkeys, brute-force protection, and Keycloak failed-login event capture.
+- Call the role-check helper from protected application routes and define a role-provisioning workflow.
+- Decide whether app sign-out should also terminate the Keycloak SSO session. Current sign-out clears only the local Auth.js session.
+- Set production secrets and HTTPS endpoints, and configure an independently controlled immutable audit archive if required.
+
+Auth.js sessions currently use encrypted JWT cookies; PostgreSQL does not store session tokens. Failed password/passkey attempts occur at Keycloak and are not yet forwarded into the app audit table.
+
 ## Local Setup
 
 1. Install dependencies with `pnpm install`.
