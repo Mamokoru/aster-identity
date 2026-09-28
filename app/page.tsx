@@ -1,6 +1,7 @@
 "use client";
 
-import { signIn, signOut, getSession } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
+import Link from "next/link";
 import { useEffect, useState, type SubmitEvent } from "react";
 
 export default function Home() {
@@ -124,11 +125,13 @@ export default function Home() {
             {notice && <p className="form-notice" role="status">{notice}</p>}
 
             {user && (
-              <button className="submit-button" type="button" onClick={() => void signOut({ callbackUrl: "/" })}>
+              <Link className="submit-button" href="/api/auth/keycloak-logout" prefetch={false}>
                 <span>Sign out</span>
                 <span className="button-arrow" aria-hidden="true">&#8594;</span>
-              </button>
+              </Link>
             )}
+
+            {user && <a className="workspace-link" href="/workspace">Open workspace</a>}
           </form>
 
           <div className="form-divider"><span /> <span>SECURE WORKSPACE ACCESS</span> <span /></div>

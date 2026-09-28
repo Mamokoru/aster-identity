@@ -38,6 +38,6 @@ function createPool(): Pool {
 }
 
 export function getDatabasePool(): Pool {
-  asterDatabasePool ??= createPool();
-  return asterDatabasePool;
+  globalThis.asterDatabasePool ??= createPool();
+  return globalThis.asterDatabasePool;
 }

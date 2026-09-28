@@ -20,6 +20,13 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
   },
   callbacks: {
+    async jwt({ token, account }) {
+      if (account?.provider === "keycloak" && account.id_token) {
+        token.keycloakIdToken = account.id_token;
+      }
+
+      return token;
+    },
     async session({ session, token }) {
       if (session.user && token.sub) {
         session.user.id = token.sub;

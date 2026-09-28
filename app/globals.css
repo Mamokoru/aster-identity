@@ -570,6 +570,7 @@ input:focus-visible {
   cursor: pointer;
   font-size: 13px;
   font-weight: 700;
+  text-decoration: none;
   transition: background 160ms ease, transform 160ms ease;
 }
 
@@ -642,6 +643,59 @@ input:focus-visible {
   text-decoration: none;
 }
 
+.workspace-link {
+  display: block;
+  margin-top: 14px;
+  color: #416e56;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+}
+
+.workspace-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.workspace-page {
+  display: grid;
+  min-height: 100svh;
+  place-items: center;
+  padding: 32px;
+  background: var(--paper);
+}
+
+.workspace-message {
+  width: min(100%, 520px);
+  padding: 40px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #fff;
+}
+
+.workspace-message h1 {
+  margin: 14px 0;
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 32px;
+  font-weight: 500;
+}
+
+.workspace-message p:not(.eyebrow) {
+  color: #69736d;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.workspace-message a {
+  display: inline-flex;
+  margin-top: 12px;
+  color: #416e56;
+  font-size: 13px;
+  font-weight: 700;
+  text-underline-offset: 3px;
+}
+
 @media (max-width: 1080px) {
   .auth-shell {
     grid-template-columns: minmax(0, 1fr) minmax(420px, 0.92fr);
@@ -705,6 +759,14 @@ input:focus-visible {
 
   .form-heading h2 {
     font-size: 31px;
+  }
+
+  .workspace-page {
+    padding: 20px;
+  }
+
+  .workspace-message {
+    padding: 26px;
   }
 }
 
