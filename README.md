@@ -66,3 +66,7 @@ Auth.js v4 sessions remain encrypted JWT cookies; PostgreSQL does not store sess
 - Set `PGSSLMODE=verify-full` for PostgreSQL connections in production. The `disable` value in `.env.example` is for local development only.
 - Keep database roles least-privileged, rotate credentials, and protect backups. The audit trigger blocks edits through the app role; database administrators can still alter records. Export audit records to an independently controlled immutable archive when required.
 - Legal obligations depend on deployment jurisdiction, data, and organization. This starter provides technical controls, not a certification or legal determination.
+
+## License
+
+This project is distributed under the [MIT License](LICENSE), copyright (c) 2026 Bhudev Hariom Gupta. The license includes warranty and liability disclaimers, subject to applicable law. It does not certify this starter as legally compliant or replace deployment-specific legal review.
